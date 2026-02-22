@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <!-- Meta tags สำหรับ responsiveness และ SEO -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Professional Valentine Spending Analysis Dashboard with animated background and responsive design.">
+    <meta name="keywords" content="Valentine, Spending, Dashboard, Analysis, Looker Studio">
+    <title>💘 Valentine Spending Pro Dashboard</title>
+
+    <!-- Inline CSS สำหรับ styling ทั้งหมด เพื่อความ standalone -->
+    <style>
+        /* รีเซ็ต default styles เพื่อ consistency ทุกเบราว์เซอร์ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif; /* ฟอนต์สวยทันสมัย ถ้าไม่มี fallback เป็น sans-serif */
+        }
+
+        /* Body styles: เต็มจอ, พื้นหลัง gradient เคลื่อนไหว */
+        html, body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* ห้ามเลื่อนทั้งหน้า เพื่อให้พอดีเป๊ะ */
+            background: linear-gradient(135deg, #ff4d6d, #ff758f, #ff8fa3, #ff4d6d); /* Gradient ธีมวาเลนไทน์ */
+            background-size: 400% 400%; /* สำหรับ animation */
+            animation: gradientFlow 15s ease infinite; /* Animation พื้นหลังไหลเวียนสวยงาม */
+            color: #fff; /* สีตัวอักษรหลัก */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative; /* สำหรับ overlay particles */
+        }
+
+        /* Keyframe สำหรับ gradient animation */
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Dark mode styles: เปลี่ยนธีมเมื่อ toggle */
+        body.dark-mode {
+            background: linear-gradient(135deg, #4d0000, #8f003f, #a3005c, #4d0000);
+            background-size: 400% 400%;
+            animation: gradientFlow 15s ease infinite;
+            color: #ddd;
+        }
+
+        /* Header: ชื่อแดชบอร์ดกับ animation fade-in */
+        header {
+            text-align: center;
+            padding: 20px 15px;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10; /* อยู่เหนือ particles */
+            animation: fadeInDown 1.5s ease-out; /* Animation เข้าจากด้านบน */
+        }
+
+        header h1 {
+            font-size: clamp(28px, 5vw, 48px); /* Responsive font size */
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); /* Glow effect */
+            transition: text-shadow 0.3s ease; /* Smooth hover */
+        }
+
+        header h1:hover {
+            text-shadow: 0 0 20px rgba(255, 255, 255, 1); /* Glow brighter on hover */
+        }
+
+        /* Keyframe สำหรับ fade-in animation */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard container: กลางหน้าจอ, glassmorphism card */
+        .dashboard {
+            width:100%;
+            margin-top: 100px;
+            max-width: 1400px; /* สำหรับจอใหญ่ */
+            background: rgba(255, 255, 255, 0.15); /* Glass effect */
+            backdrop-filter: blur(20px); /* เบลอพื้นหลัง */
+            border-radius: 25px;
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); /* Shadow ลึก */
+            animation: pulseShadow 2s infinite alternate; /* Pulse animation สำหรับ shadow */
+            position: relative;
+            z-index: 5; /* อยู่เหนือ particles แต่ต่ำกว่า header */
+            overflow: hidden; /* ป้องกัน content ล้น */
+        }
+
+        body.dark-mode .dashboard {
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 20px 50px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Keyframe สำหรับ pulse shadow */
+        @keyframes pulseShadow {
+            from { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); }
+            to { box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); }
+        }
+
+        /* Iframe container: อัตราส่วน 16:9 responsive */
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9; /* 16:9 ratio ตามที่ขอ */
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.2); /* Inner glow */
+        }
+
+        .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            transition: opacity 0.5s ease; /* Fade in after load */
+        }
+
+        /* Loading spinner: Heart-shaped ก่อน iframe โหลด */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            animation: heartBeat 1.2s infinite; /* Heart beat animation */
+            z-index: 10;
+        }
+
+        .loading-spinner::before,
+        .loading-spinner::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 25px;
+            height: 40px;
+            background: #ff4d6d;
+            border-radius: 25px 25px 0 0;
+            transform: rotate(-45deg);
+        }
+
+        .loading-spinner::after {
+            left: 25px;
+            transform: rotate(45deg);
+        }
+
+        /* Keyframe สำหรับ heart beat */
+        @keyframes heartBeat {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            14% { transform: translate(-50%, -50%) scale(1.1); }
+            28% { transform: translate(-50%, -50%) scale(1); }
+            42% { transform: translate(-50%, -50%) scale(1.1); }
+            70% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Footer: ล่างสุด, กับ social links */
+        footer {
+            text-align: center;
+            padding: 15px;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            z-index: 10;
+            font-size: 14px;
+            animation: fadeInUp 1.5s ease-out; /* Animation เข้าจากด้านล่าง */
+        }
+
+        footer a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: color 0.3s ease;
+        }
+
+        footer a:hover {
+            color: #ff4d6d;
+            text-shadow: 0 0 10px #ff4d6d;
+        }
+
+        body.dark-mode footer a {
+            color: #ddd;
+        }
+
+        body.dark-mode footer a:hover {
+            color: #ff8fa3;
+        }
+
+        /* Keyframe สำหรับ fade-in up */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dark mode toggle button: มุมขวาบน */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 15;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+
+        body.dark-mode .theme-toggle svg {
+            fill: #ddd;
+        }
+
+        /* Particles container สำหรับหัวใจลอย (background effect) */
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* อยู่หลัง content */
+            pointer-events: none; /* ไม่กีดขวาง click */
+        }
+
+        /* Media queries สำหรับ responsiveness */
+        @media (max-width: 768px) { /* มือถือ */
+            header h1 {
+                font-size: 28px;
+            }
+            .dashboard {
+                width: 98%;
+                padding: 15px;
+                border-radius: 20px;
+            }
+            .iframe-container {
+                border-radius: 15px;
+            }
+            footer {
+                font-size: 12px;
+                padding: 10px;
+            }
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+                width: 35px;
+                height: 35px;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) { /* Tablet */
+            header h1 {
+                font-size: 36px;
+            }
+            .dashboard {
+                max-width: 1000px;
+            }
+        }
+
+        @media (min-width: 1025px) { /* Desktop */
+            .dashboard {
+                max-width: 1000px;
+            }
+        }
+
+        /* Fallback สำหรับเบราว์เซอร์เก่า (no animation) */
+        @supports not (animation: gradientFlow) {
+            body {
+                background: #ff758f; /* Static color */
+            }
+        }
+        /* === ลูกเล่นพื้นหลังเพิ่มเติม === */
+
+/* Aurora-like gradient flow (แสงเหนือเคลื่อนไหว) */
+.aurora-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background: 
+        radial-gradient(circle at 15% 20%, rgba(255, 105, 180, 0.45) 0%, transparent 50%),
+        radial-gradient(circle at 85% 75%, rgba(255, 182, 193, 0.38) 0%, transparent 55%),
+        radial-gradient(circle at 40% 60%, rgba(186, 85, 211, 0.3) 0%, transparent 60%);
+    animation: auroraDrift 22s ease-in-out infinite alternate;
+    mix-blend-mode: screen;
+    opacity: 0.8;
+}
+@keyframes auroraDrift {
+    0%   { transform: translate(0, 0) scale(1.05); filter: hue-rotate(0deg); }
+    25%  { transform: translate(4%, -3%) scale(1.08); filter: hue-rotate(30deg); }
+    50%  { transform: translate(-5%, 6%) scale(1.1);  filter: hue-rotate(60deg); }
+    75%  { transform: translate(3%, -4%) scale(1.07); filter: hue-rotate(90deg); }
+    100% { transform: translate(0, 0) scale(1.05); filter: hue-rotate(120deg); }
+}
+
+/* Floating glowing blobs/orbs */
+.floating-blobs {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, white 10%, transparent 70%);
+    box-shadow: 0 0 60px 20px rgba(255, 105, 180, 0.6);
+    animation: floatBlob 18s infinite ease-in-out, pulseBlob 7s infinite alternate;
+}
+.blob:nth-child(1) { width: 220px; height: 220px; top: 18%; left: 12%; animation-delay: 0s; }
+.blob:nth-child(2) { width: 180px; height: 180px; top: 65%; left: 68%; animation-delay: 5s; }
+.blob:nth-child(3) { width: 260px; height: 260px; top: 45%; left: 35%; animation-delay: 9s; }
+@keyframes floatBlob {
+    0%,100% { transform: translate(0, 0); }
+    50%     { transform: translate(50px, -40px); }
+}
+@keyframes pulseBlob {
+    0% { opacity: 0.5; box-shadow: 0 0 60px 20px rgba(255,105,180,0.6); }
+    100% { opacity: 0.85; box-shadow: 0 0 100px 40px rgba(255,105,180,0.9); }
+}
+
+/* Sparkle / glitter layer (ประกายเล็ก ๆ กระพริบ) */
+.sparkle-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: transparent;
+    overflow: hidden;
+}
+.sparkle {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 8px white;
+    animation: twinkle 3s infinite alternate;
+    opacity: 0;
+}
+@keyframes twinkle {
+    0%   { opacity: 0; transform: scale(0.5); }
+    50%  { opacity: 1; transform: scale(1.4); }
+    100% { opacity: 0; transform: scale(0.5); }
+}
+
+/* Mouse trail canvas (ประกายตามเมาส์) */
+#mouse-trail-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+/* === ฝนดาวตก (Meteor Shower) === */
+#meteor-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: -1;           /* อยู่หลัง content หลัก แต่เหนือ aurora ถ้ามี */
+    pointer-events: none;
+}
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1>💘 Valentine Spending  <h1>
+    </header>
+
+    <!-- Theme toggle button (moon icon สำหรับ dark mode) -->
+    <button class="theme-toggle" aria-label="Toggle Dark Mode">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 3a9 9 0 0 0 9 9c0 4.97-4.03 9-9 9-4.97 0-9-4.03-9-9 0-2.12.74-4.07 1.97-5.61l1.42 1.42C3.78 7.24 3 9.09 3 11.25c0 4.97 4.03 9 9 9s9-4.03 9-9-4.03-9-9-9H12V3z"/>
+        </svg>
+    </button>
+
+    <!-- Dashboard card -->
+    <div class="dashboard">
+        <div class="iframe-container">
+            <!-- Loading spinner -->
+            <div class="loading-spinner"></div>
+            <!-- Iframe Looker Studio -->
+            <iframe 
+                src="https://lookerstudio.google.com/embed/reporting/8846b220-63d4-4e93-a714-46c98877d673/page/oijpF"
+                allowfullscreen
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                onload="this.previousElementSibling.style.display='none'; this.style.opacity='1';">
+            </iframe>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        © 2026 Valentine Pro Dashboard | Designed with ❤️ by AI
+        <br>
+        <a href="https://twitter.com" target="_blank">Twitter</a> |
+        <a href="https://facebook.com" target="_blank">Facebook</a> |
+        <a href="https://instagram.com" target="_blank">Instagram</a>
+    </footer>
+    <!-- ฝนดาวตก -->
+<canvas id="meteor-canvas"></canvas>
+
+    <!-- Particles canvas สำหรับ background effect -->
+    <canvas id="particles"></canvas>
+    <!-- เพิ่มเอฟเฟคพื้นหลังใหม่ -->
+<div class="aurora-bg"></div>
+<div class="floating-blobs"></div>
+<div class="sparkle-layer"></div>
+<canvas id="mouse-trail-canvas"></canvas>
+    <!-- Aurora background -->
+<div class="aurora"></div>
+
+<!-- Light Rays -->
+<div class="light-rays"></div>
+
+<!-- Glow Orbs -->
+<div class="orbs">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+</div>
+
+<!-- Noise Texture -->
+<div class="noise"></div>
+
+<!-- Mouse Spark Trail -->
+<canvas id="sparkCanvas"></canvas>
+
+    <!-- Inline JavaScript สำหรับ particles (หัวใจลอย) และ dark mode toggle -->
+    <script>
+        // Dark mode toggle functionality
+        const toggleButton = document.querySelector('.theme-toggle');
+        toggleButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            // เปลี่ยน icon (moon/sun) - สำหรับ simplicity ใช้ path เดียวแต่ adjust fill ใน CSS
+        });
+
+        // Particles.js custom (หัวใจลอยขึ้น) - ไม่ใช้ library external, custom code
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Resize canvas on window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Particle class สำหรับหัวใจ
+        class HeartParticle {
+            constructor(x, y, size, speed) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.speed = speed;
+                this.opacity = Math.random() * 0.5 + 0.3; // Semi-transparent
+                this.angle = Math.random() * 360; // Random rotation
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle * Math.PI / 180);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(0, -this.size / 2, -this.size / 2, -this.size, -this.size, -this.size / 2);
+                ctx.bezierCurveTo(-this.size, 0, -this.size / 2, this.size / 2, 0, this.size / 2);
+                ctx.bezierCurveTo(0, this.size / 2, this.size / 2, this.size / 2, this.size, -this.size / 2);
+                ctx.bezierCurveTo(this.size, -this.size, this.size / 2, -this.size / 2, 0, -this.size / 2);
+                ctx.closePath();
+                ctx.fillStyle = `rgba(255, 77, 109, ${this.opacity})`; // สีชมพูแดง
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update() {
+                this.y -= this.speed; // ลอยขึ้น
+                this.angle += 0.5; // หมุนช้า ๆ
+                if (this.y + this.size < 0) {
+                    this.y = canvas.height + this.size; // Reset จากล่าง
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+        }
+
+        // สร้าง particles array
+        const particles = [];
+        for (let i = 0; i < 50; i++) { // 50 หัวใจเพื่อไม่หนักเครื่อง
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const size = Math.random() * 10 + 5; // ขนาด 5-15px
+            const speed = Math.random() * 1 + 0.5; // ความเร็ว 0.5-1.5
+            particles.push(new HeartParticle(x, y, size, speed));
+        }
+
+        // Animation loop
+        function animateParticles() {
+            requestAnimationFrame(animateParticles);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear frame
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+        }
+
+        animateParticles();
+
+        // Adjust for dark mode (เปลี่ยนสี particles)
+        const observer = new MutationObserver(() => {
+            const isDark = document.body.classList.contains('dark-mode');
+            particles.forEach(p => {
+                p.color = isDark ? 'rgba(255, 143, 163, ${p.opacity})' : 'rgba(255, 77, 109, ${p.opacity})';
+            });
+        });
+        observer.observe(document.body, { attributes: true });
+        // Floating blobs - สร้าง dynamic
+const blobsContainer = document.querySelector('.floating-blobs');
+for(let i = 0; i < 3; i++) {
+    const blob = document.createElement('div');
+    blob.className = 'blob';
+    blobsContainer.appendChild(blob);
+}
+
+// Sparkles random กระพริบทั่วพื้นหลัง
+const sparkleLayer = document.querySelector('.sparkle-layer');
+function createSparkle() {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = Math.random() * 3 + 's';
+    sparkleLayer.appendChild(s);
+    setTimeout(() => s.remove(), 6000); // ลบหลัง 6 วินาทีเพื่อไม่ให้สะสม
+}
+setInterval(createSparkle, 400); // สร้างใหม่ทุก 0.4 วินาที
+
+// Mouse trail sparkles (ประกายวงกลมตามเมาส์)
+const trailCanvas = document.getElementById('mouse-trail-canvas');
+const trailCtx = trailCanvas.getContext('2d');
+trailCanvas.width = window.innerWidth;
+trailCanvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+    trailCanvas.width = window.innerWidth;
+    trailCanvas.height = window.innerHeight;
+});
+
+let trailParticles = [];
+class TrailParticle {
+    constructor(x, y) {
+        this.x = x; this.y = y;
+        this.size = Math.random() * 5 + 2;
+        this.vx = Math.random() * 3 - 1.5;
+        this.vy = Math.random() * 3 - 1.5;
+        this.life = 50 + Math.random() * 30;
+        this.opacity = 1;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.opacity -= 0.02;
+        this.life--;
+    }
+    draw() {
+        trailCtx.globalAlpha = this.opacity;
+        trailCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        trailCtx.beginPath();
+        trailCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        trailCtx.fill();
+    }
+}
+
+document.addEventListener('mousemove', e => {
+    for(let i = 0; i < 2; i++) {
+        trailParticles.push(new TrailParticle(e.clientX, e.clientY));
+    }
+});
+
+function animateTrail() {
+    requestAnimationFrame(animateTrail);
+    trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+    trailParticles = trailParticles.filter(p => {
+        p.update();
+        if (p.life <= 0 || p.opacity <= 0) return false;
+        p.draw();
+        return true;
+    });
+}
+animateTrail();
+// ฝนดาวตก (Shooting Stars)
+const meteorCanvas = document.getElementById('meteor-canvas');
+const meteorCtx = meteorCanvas.getContext('2d');
+meteorCanvas.width = window.innerWidth;
+meteorCanvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+    meteorCanvas.width = window.innerWidth;
+    meteorCanvas.height = window.innerHeight;
+});
+
+let meteors = [];
+
+class Meteor {
+    constructor() {
+        this.reset();
+    }
+    reset() {
+        this.x = Math.random() * meteorCanvas.width;
+        this.y = -50;                    // เริ่มจากด้านบนนอกจอ
+        this.length = Math.random() * 80 + 40;
+        this.speed = Math.random() * 8 + 4;  // ความเร็วต่างกัน
+        this.opacity = 1;
+        this.angle = Math.PI / 4 + Math.random() * 0.5 - 0.25; // มุมเฉียงซ้าย-ขวาเล็กน้อย
+        this.hue = Math.random() > 0.7 ? 320 : 280; // สีชมพู-ม่วงโรแมนติกเป็นหลัก
+    }
+    update() {
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+        this.opacity -= 0.008;
+        
+        if (this.y > meteorCanvas.height + 50 || this.opacity <= 0) {
+            this.reset();
+        }
+    }
+    draw() {
+        meteorCtx.save();
+        meteorCtx.globalAlpha = this.opacity;
+        meteorCtx.strokeStyle = `hsl(${this.hue}, 100%, 70%)`;
+        meteorCtx.lineWidth = 2;
+        meteorCtx.shadowBlur = 15;
+        meteorCtx.shadowColor = `hsl(${this.hue}, 100%, 80%)`;
+        
+        meteorCtx.beginPath();
+        meteorCtx.moveTo(this.x, this.y);
+        meteorCtx.lineTo(
+            this.x - Math.cos(this.angle) * this.length,
+            this.y - Math.sin(this.angle) * this.length
+        );
+        meteorCtx.stroke();
+        
+        // หางประกายเล็ก ๆ
+        meteorCtx.globalAlpha = this.opacity * 0.4;
+        meteorCtx.lineWidth = 4;
+        meteorCtx.beginPath();
+        meteorCtx.moveTo(this.x, this.y);
+        meteorCtx.lineTo(
+            this.x - Math.cos(this.angle) * this.length * 1.5,
+            this.y - Math.sin(this.angle) * this.length * 1.5
+        );
+        meteorCtx.stroke();
+        
+        meteorCtx.restore();
+    }
+}
+
+// สร้างดาวตก 8-12 ตัว (ไม่หนักเครื่อง)
+for (let i = 0; i < 10; i++) {
+    meteors.push(new Meteor());
+}
+
+function animateMeteors() {
+    requestAnimationFrame(animateMeteors);
+    meteorCtx.clearRect(0, 0, meteorCanvas.width, meteorCanvas.height);
+    
+    meteors.forEach(m => {
+        m.update();
+        m.draw();
+    });
+}
+animateMeteors();
+    </script>
+
+</body>
+
+</html>
